@@ -28,7 +28,7 @@ import spock.lang.Specification
 class DefaultSwiftXCTestSuiteTest extends Specification {
     def "has only a single executables"() {
         def componentUnderTest = Mock(SwiftComponent)
-        SwiftXCTestSuite testSuite = new DefaultSwiftXCTestSuite("test", Mock(ProjectLayout), Stub(FileOperations), Stub(ProviderFactory), TestUtil.objectFactory(), Stub(ConfigurationContainer))
+        SwiftXCTestSuite testSuite = new DefaultSwiftXCTestSuite("test", Mock(ProjectLayout), Stub(FileOperations), TestUtil.objectFactory(), Stub(ConfigurationContainer))
         testSuite.testedComponent.set(componentUnderTest)
         expect:
         testSuite.developmentBinary.name == "testExecutable"

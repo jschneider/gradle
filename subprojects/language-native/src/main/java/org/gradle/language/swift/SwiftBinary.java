@@ -19,9 +19,7 @@ package org.gradle.language.swift;
 import org.gradle.api.Incubating;
 import org.gradle.api.component.SoftwareComponent;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Provider;
-import org.gradle.nativeplatform.ModuleMap;
 
 /**
  * A binary built from Swift source.

@@ -35,9 +35,7 @@ import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.internal.file.collections.FileCollectionAdapter;
 import org.gradle.api.internal.file.collections.MinimalFileSet;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Provider;
-import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.TaskDependency;
 import org.gradle.api.tasks.util.PatternSet;
 import org.gradle.language.nativeplatform.internal.Names;
@@ -66,7 +64,7 @@ public class DefaultSwiftBinary implements SwiftBinary {
     private final RegularFileProperty moduleFile;
     private final Configuration importPathConfiguration;
 
-    public DefaultSwiftBinary(String name, ProjectLayout projectLayout, ProviderFactory providerFactory, final ObjectFactory objectFactory, Provider<String> module, boolean debuggable, boolean optimized, boolean testable, FileCollection source, ConfigurationContainer configurations, Configuration implementation) {
+    public DefaultSwiftBinary(String name, ProjectLayout projectLayout, final ObjectFactory objectFactory, Provider<String> module, boolean debuggable, boolean optimized, boolean testable, FileCollection source, ConfigurationContainer configurations, Configuration implementation) {
         this.name = name;
         this.module = module;
         this.debuggable = debuggable;

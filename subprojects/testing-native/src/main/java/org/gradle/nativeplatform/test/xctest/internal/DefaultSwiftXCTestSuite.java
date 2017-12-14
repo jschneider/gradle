@@ -21,7 +21,6 @@ import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.internal.file.FileOperations;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
-import org.gradle.api.provider.ProviderFactory;
 import org.gradle.language.swift.SwiftComponent;
 import org.gradle.language.swift.internal.DefaultSwiftComponent;
 import org.gradle.nativeplatform.test.xctest.SwiftXCTestBinary;
@@ -37,9 +36,9 @@ public class DefaultSwiftXCTestSuite extends DefaultSwiftComponent implements Sw
     private final SwiftXCTestBinary testBinary;
 
     @Inject
-    public DefaultSwiftXCTestSuite(String name, ProjectLayout projectLayout, FileOperations fileOperations, ProviderFactory providerFactory, ObjectFactory objectFactory, ConfigurationContainer configurations) {
+    public DefaultSwiftXCTestSuite(String name, ProjectLayout projectLayout, FileOperations fileOperations, ObjectFactory objectFactory, ConfigurationContainer configurations) {
         super(name, fileOperations, objectFactory, configurations);
-        this.testBinary = objectFactory.newInstance(DefaultSwiftXCTestBinary.class, name + "Executable", projectLayout, providerFactory, objectFactory, getModule(), true, false, true, getSwiftSource(), configurations, getImplementationDependencies());
+        this.testBinary = objectFactory.newInstance(DefaultSwiftXCTestBinary.class, name + "Executable", projectLayout, objectFactory, getModule(), true, false, true, getSwiftSource(), configurations, getImplementationDependencies());
         this.testedComponent = objectFactory.property(SwiftComponent.class);
     }
 

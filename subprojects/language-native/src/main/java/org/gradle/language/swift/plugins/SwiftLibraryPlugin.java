@@ -65,7 +65,7 @@ public class SwiftLibraryPlugin implements Plugin<Project> {
         ConfigurationContainer configurations = project.getConfigurations();
         ObjectFactory objectFactory = project.getObjects();
 
-        SwiftLibrary library = project.getExtensions().create(SwiftLibrary.class, "library", DefaultSwiftLibrary.class, "main", project.getLayout(), project.getProviders(), objectFactory, fileOperations, configurations);
+        SwiftLibrary library = project.getExtensions().create(SwiftLibrary.class, "library", DefaultSwiftLibrary.class, "main", project.getLayout(), objectFactory, fileOperations, configurations);
         project.getComponents().add(library);
         SwiftSharedLibrary debugSharedLibrary = library.getDebugSharedLibrary();
         project.getComponents().add(debugSharedLibrary);

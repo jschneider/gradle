@@ -68,7 +68,7 @@ public class SwiftApplicationPlugin implements Plugin<ProjectInternal> {
         ObjectFactory objectFactory = project.getObjects();
 
         // Add the component extension
-        SwiftApplication application = project.getExtensions().create(SwiftApplication.class, "application", DefaultSwiftApplication.class, "main", project.getLayout(), project.getProviders(), project.getObjects(), fileOperations, configurations);
+        SwiftApplication application = project.getExtensions().create(SwiftApplication.class, "application", DefaultSwiftApplication.class, "main", project.getLayout(), project.getObjects(), fileOperations, configurations);
         project.getComponents().add(application);
         project.getComponents().add(application.getDebugExecutable());
         project.getComponents().add(application.getReleaseExecutable());
