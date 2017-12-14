@@ -29,7 +29,6 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.language.swift.SwiftApplication;
 import org.gradle.language.swift.internal.DefaultSwiftApplication;
 import org.gradle.language.swift.tasks.SwiftCompile;
-import org.gradle.nativeplatform.ModuleMap;
 import org.gradle.util.GUtil;
 
 import javax.inject.Inject;
@@ -92,7 +91,6 @@ public class SwiftApplicationPlugin implements Plugin<ProjectInternal> {
         debugApiElements.getAttributes().attribute(Usage.USAGE_ATTRIBUTE, objectFactory.named(Usage.class, Usage.SWIFT_API));
         debugApiElements.getAttributes().attribute(DEBUGGABLE_ATTRIBUTE, application.getDebugExecutable().isDebuggable());
         debugApiElements.getAttributes().attribute(OPTIMIZED_ATTRIBUTE, application.getDebugExecutable().isOptimized());
-        debugApiElements.getAttributes().attribute(ModuleMap.REQUIRES_MODULE_MAP, false);
         debugApiElements.getOutgoing().artifact(compileDebug.getModuleFile());
 
         Configuration releaseApiElements = configurations.maybeCreate("releaseSwiftApiElements");
@@ -101,7 +99,6 @@ public class SwiftApplicationPlugin implements Plugin<ProjectInternal> {
         releaseApiElements.getAttributes().attribute(Usage.USAGE_ATTRIBUTE, objectFactory.named(Usage.class, Usage.SWIFT_API));
         releaseApiElements.getAttributes().attribute(DEBUGGABLE_ATTRIBUTE, application.getReleaseExecutable().isDebuggable());
         releaseApiElements.getAttributes().attribute(OPTIMIZED_ATTRIBUTE, application.getReleaseExecutable().isOptimized());
-        debugApiElements.getAttributes().attribute(ModuleMap.REQUIRES_MODULE_MAP, false);
         releaseApiElements.getOutgoing().artifact(compileRelease.getModuleFile());
     }
 }

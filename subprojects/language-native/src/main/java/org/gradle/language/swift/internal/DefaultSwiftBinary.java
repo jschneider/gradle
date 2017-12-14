@@ -18,8 +18,8 @@ package org.gradle.language.swift.internal;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.gradle.api.Action;
-import org.gradle.api.artifacts.ArtifactView;
+import com.google.common.collect.Sets;
+import org.gradle.api.Buildable;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
@@ -32,17 +32,22 @@ import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.internal.file.collections.FileCollectionAdapter;
+import org.gradle.api.internal.file.collections.MinimalFileSet;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
+import org.gradle.api.tasks.TaskDependency;
 import org.gradle.api.tasks.util.PatternSet;
 import org.gradle.language.nativeplatform.internal.Names;
 import org.gradle.language.swift.SwiftBinary;
 import org.gradle.nativeplatform.ModuleMap;
+import org.gradle.nativeplatform.internal.modulemap.GenerateModuleMapFile;
 
+import java.io.File;
 import java.util.Map;
-import java.util.concurrent.Callable;
+import java.util.Set;
 
 import static org.gradle.language.cpp.CppBinary.DEBUGGABLE_ATTRIBUTE;
 import static org.gradle.language.cpp.CppBinary.OPTIMIZED_ATTRIBUTE;
@@ -55,13 +60,13 @@ public class DefaultSwiftBinary implements SwiftBinary {
     private final boolean testable;
     private final FileCollection source;
     private final FileCollection compileModules;
-    private final ListProperty<ModuleMap> compileModuleMaps;
     private final FileCollection linkLibs;
     private final Configuration runtimeLibs;
     private final DirectoryProperty objectsDir;
     private final RegularFileProperty moduleFile;
+    private final Configuration importPathConfiguration;
 
-    public DefaultSwiftBinary(String name, ProjectLayout projectLayout, ProviderFactory providerFactory, ObjectFactory objectFactory, Provider<String> module, boolean debuggable, boolean optimized, boolean testable, FileCollection source, ConfigurationContainer configurations, Configuration implementation) {
+    public DefaultSwiftBinary(String name, ProjectLayout projectLayout, ProviderFactory providerFactory, final ObjectFactory objectFactory, Provider<String> module, boolean debuggable, boolean optimized, boolean testable, FileCollection source, ConfigurationContainer configurations, Configuration implementation) {
         this.name = name;
         this.module = module;
         this.debuggable = debuggable;
@@ -70,17 +75,16 @@ public class DefaultSwiftBinary implements SwiftBinary {
         this.source = source;
         this.objectsDir = projectLayout.directoryProperty();
         this.moduleFile = projectLayout.fileProperty();
-        this.compileModuleMaps = objectFactory.listProperty(ModuleMap.class);
 
         Names names = Names.of(name);
 
         // TODO - reduce duplication with C++ binary
-        final Configuration importPathConfig = configurations.maybeCreate(names.withPrefix("swiftCompile"));
-        importPathConfig.extendsFrom(implementation);
-        importPathConfig.setCanBeConsumed(false);
-        importPathConfig.getAttributes().attribute(Usage.USAGE_ATTRIBUTE, objectFactory.named(Usage.class, Usage.SWIFT_API));
-        importPathConfig.getAttributes().attribute(DEBUGGABLE_ATTRIBUTE, debuggable);
-        importPathConfig.getAttributes().attribute(OPTIMIZED_ATTRIBUTE, optimized);
+        importPathConfiguration = configurations.maybeCreate(names.withPrefix("swiftCompile"));
+        importPathConfiguration.extendsFrom(implementation);
+        importPathConfiguration.setCanBeConsumed(false);
+        importPathConfiguration.getAttributes().attribute(Usage.USAGE_ATTRIBUTE, objectFactory.named(Usage.class, Usage.SWIFT_API));
+        importPathConfiguration.getAttributes().attribute(DEBUGGABLE_ATTRIBUTE, debuggable);
+        importPathConfiguration.getAttributes().attribute(OPTIMIZED_ATTRIBUTE, optimized);
 
         Configuration nativeLink = configurations.maybeCreate(names.withPrefix("nativeLink"));
         nativeLink.extendsFrom(implementation);
@@ -96,46 +100,9 @@ public class DefaultSwiftBinary implements SwiftBinary {
         nativeRuntime.getAttributes().attribute(DEBUGGABLE_ATTRIBUTE, debuggable);
         nativeRuntime.getAttributes().attribute(OPTIMIZED_ATTRIBUTE, optimized);
 
-        compileModules = importPathConfig;
+        compileModules = new FileCollectionAdapter(new ModulePath(importPathConfiguration, projectLayout));
         linkLibs = nativeLink;
         runtimeLibs = nativeRuntime;
-
-        compileModuleMaps.addAll(providerFactory.provider(new Callable<Iterable<ModuleMap>>() {
-            @Override
-            public Iterable<ModuleMap> call() throws Exception {
-                Map<String, ModuleMap> moduleMaps = Maps.newHashMap();
-                ArtifactView view = importPathConfig.getIncoming().artifactView(new Action<ArtifactView.ViewConfiguration>() {
-                    @Override
-                    public void execute(ArtifactView.ViewConfiguration viewConfiguration) {
-                        viewConfiguration.getAttributes().attribute(ModuleMap.REQUIRES_MODULE_MAP, true);
-                    }
-                });
-
-                for (ResolvedArtifactResult artifact : view.getArtifacts().getArtifacts()) {
-                    String moduleName;
-                    ComponentIdentifier id = artifact.getId().getComponentIdentifier();
-                    if (ModuleComponentIdentifier.class.isAssignableFrom(id.getClass())) {
-                        moduleName = ((ModuleComponentIdentifier)id).getModule();
-                    } else if (ProjectComponentIdentifier.class.isAssignableFrom(id.getClass())) {
-                        moduleName = ((ProjectComponentIdentifier)id).getProjectName();
-                    } else if (LibraryBinaryIdentifier.class.isAssignableFrom(id.getClass())) {
-                        moduleName = ((LibraryBinaryIdentifier)id).getLibraryName();
-                    } else {
-                        throw new IllegalArgumentException("Could not determine the name of " + id.getDisplayName() + ": unknown component identifier type: " + id.getClass().getSimpleName());
-                    }
-
-                    ModuleMap moduleMap;
-                    if (moduleMaps.containsKey(moduleName)) {
-                        moduleMap = moduleMaps.get(moduleName);
-                    } else {
-                        moduleMap = new ModuleMap(moduleName, Lists.<String>newArrayList());
-                        moduleMaps.put(moduleName, moduleMap);
-                    }
-                    moduleMap.getPublicHeaderPaths().add(artifact.getFile().getAbsolutePath());
-                }
-                return moduleMaps.values();
-            }
-        }));
     }
 
     @Override
@@ -174,11 +141,6 @@ public class DefaultSwiftBinary implements SwiftBinary {
     }
 
     @Override
-    public ListProperty<ModuleMap> getCompileModuleMaps() {
-        return compileModuleMaps;
-    }
-
-    @Override
     public FileCollection getLinkLibraries() {
         return linkLibs;
     }
@@ -196,8 +158,76 @@ public class DefaultSwiftBinary implements SwiftBinary {
         return moduleFile;
     }
 
+    public Configuration getImportPathConfiguration() {
+        return importPathConfiguration;
+    }
+
     @Override
     public FileCollection getObjects() {
         return objectsDir.getAsFileTree().matching(new PatternSet().include("**/*.obj", "**/*.o"));
+    }
+
+    private class ModulePath implements MinimalFileSet, Buildable {
+        private final Configuration importPathConfig;
+        private final ProjectLayout projectLayout;
+
+        private Set<File> result;
+
+        ModulePath(Configuration importPathConfig, ProjectLayout projectLayout) {
+            this.importPathConfig = importPathConfig;
+            this.projectLayout = projectLayout;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Module include path for " + DefaultSwiftBinary.this.toString();
+        }
+
+        @Override
+        public Set<File> getFiles() {
+            if (result == null) {
+                result = Sets.newLinkedHashSet();
+                Map<String, ModuleMap> moduleMaps = Maps.newHashMap();
+                for (ResolvedArtifactResult artifact : importPathConfig.getIncoming().getArtifacts()) {
+                    if (Usage.C_PLUS_PLUS_API.equals(artifact.getVariant().getAttributes().getAttribute(Usage.USAGE_ATTRIBUTE).getName())) {
+                        String moduleName;
+
+                        ComponentIdentifier id = artifact.getId().getComponentIdentifier();
+                        if (ModuleComponentIdentifier.class.isAssignableFrom(id.getClass())) {
+                            moduleName = ((ModuleComponentIdentifier) id).getModule();
+                        } else if (ProjectComponentIdentifier.class.isAssignableFrom(id.getClass())) {
+                            moduleName = ((ProjectComponentIdentifier) id).getProjectName();
+                        } else if (LibraryBinaryIdentifier.class.isAssignableFrom(id.getClass())) {
+                            moduleName = ((LibraryBinaryIdentifier) id).getLibraryName();
+                        } else {
+                            throw new IllegalArgumentException("Could not determine the name of " + id.getDisplayName() + ": unknown component identifier type: " + id.getClass().getSimpleName());
+                        }
+
+                        ModuleMap moduleMap;
+                        if (moduleMaps.containsKey(moduleName)) {
+                            moduleMap = moduleMaps.get(moduleName);
+                        } else {
+                            moduleMap = new ModuleMap(moduleName, Lists.<String>newArrayList());
+                            moduleMaps.put(moduleName, moduleMap);
+                        }
+                        moduleMap.getPublicHeaderPaths().add(artifact.getFile().getAbsolutePath());
+                    }
+                    // TODO Change this to only add SWIFT_API artifacts and instead parse modulemaps to discover compile task inputs
+                    result.add(artifact.getFile());
+                }
+
+                for (ModuleMap moduleMap : moduleMaps.values()) {
+                    final File moduleMapFile = projectLayout.getBuildDirectory().file("maps/" + moduleMap.getModuleName() + "/module.modulemap").get().getAsFile();
+                    new GenerateModuleMapFile(moduleMapFile, moduleMap.getModuleName(), moduleMap.getPublicHeaderPaths()).run();
+                    result.add(moduleMapFile);
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public TaskDependency getBuildDependencies() {
+            return importPathConfig.getBuildDependencies();
+        }
     }
 }

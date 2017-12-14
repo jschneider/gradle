@@ -17,7 +17,6 @@
 package org.gradle.nativeplatform;
 
 import org.gradle.api.Incubating;
-import org.gradle.api.attributes.Attribute;
 import org.gradle.api.tasks.Input;
 
 import java.io.Serializable;
@@ -30,8 +29,6 @@ import java.util.List;
  */
 @Incubating
 public class ModuleMap implements Serializable {
-    public static final Attribute<Boolean> REQUIRES_MODULE_MAP = Attribute.of("org.gradle.requires-module-map", Boolean.class);
-
     private final String moduleName;
     private final List<String> publicHeaderPaths;
 

@@ -67,13 +67,6 @@ public interface SwiftBinary extends SoftwareComponent {
     FileCollection getCompileModules();
 
     /**
-     * Returns any module maps required to compile this binary.
-     *
-     * @since 4.5
-     */
-    ListProperty<ModuleMap> getCompileModuleMaps();
-
-    /**
      * Returns the link libraries to use to link this binary. Includes the link libraries of the component's dependencies.
      */
     FileCollection getLinkLibraries();

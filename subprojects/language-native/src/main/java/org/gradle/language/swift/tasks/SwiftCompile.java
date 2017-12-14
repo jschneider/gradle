@@ -16,7 +16,6 @@
 
 package org.gradle.language.swift.tasks;
 
-import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Incubating;
 import org.gradle.api.file.ConfigurableFileCollection;
@@ -44,8 +43,6 @@ import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.language.base.internal.compile.VersionAwareCompiler;
 import org.gradle.language.base.internal.tasks.SimpleStaleClassCleaner;
 import org.gradle.language.swift.internal.DefaultSwiftCompileSpec;
-import org.gradle.nativeplatform.internal.modulemap.GenerateModuleMapFile;
-import org.gradle.nativeplatform.ModuleMap;
 import org.gradle.nativeplatform.internal.BuildOperationLoggingCompilerDecorator;
 import org.gradle.nativeplatform.platform.NativePlatform;
 import org.gradle.nativeplatform.platform.internal.NativePlatformInternal;
@@ -53,8 +50,6 @@ import org.gradle.nativeplatform.toolchain.NativeToolChain;
 import org.gradle.nativeplatform.toolchain.internal.NativeToolChainInternal;
 import org.gradle.nativeplatform.toolchain.internal.PlatformToolProvider;
 import org.gradle.nativeplatform.toolchain.internal.compilespec.SwiftCompileSpec;
-import org.gradle.workers.IsolationMode;
-import org.gradle.workers.WorkerConfiguration;
 import org.gradle.workers.WorkerExecutor;
 
 import javax.inject.Inject;
@@ -77,7 +72,6 @@ public class SwiftCompile extends DefaultTask {
     private final Property<String> moduleName;
     private final RegularFileProperty moduleFile;
     private final ConfigurableFileCollection modules;
-    private final ListProperty<ModuleMap> moduleMaps;
     private final ListProperty<String> compilerArgs;
     private final DirectoryProperty objectFileDir;
     private final ConfigurableFileCollection source;
@@ -93,7 +87,6 @@ public class SwiftCompile extends DefaultTask {
         this.moduleName = getProject().getObjects().property(String.class);
         this.moduleFile = newOutputFile();
         this.modules = getProject().files();
-        this.moduleMaps = getProject().getObjects().listProperty(ModuleMap.class);
         this.workerExecutor = workerExecutor;
         this.workerLeaseService = workerLeaseService;
     }
@@ -256,16 +249,6 @@ public class SwiftCompile extends DefaultTask {
     }
 
     /**
-     * The module maps that should be generated before compiling.
-     *
-     * @since 4.5
-     */
-    @Input
-    public ListProperty<ModuleMap> getModuleMaps() {
-        return moduleMaps;
-    }
-
-    /**
      * The compiler used, including the type and the version.
      *
      * @since 4.4
@@ -296,32 +279,11 @@ public class SwiftCompile extends DefaultTask {
         spec.setModuleName(moduleName.getOrNull());
         spec.setModuleFile(moduleFile.get().getAsFile());
         for (File file : modules.getFiles()) {
-            if (file.isFile()) {
-                spec.include(file.getParentFile());
-            } else {
+            if (file.isDirectory()) {
                 spec.include(file);
+            } else {
+                spec.include(file.getParentFile());
             }
-        }
-
-        if (!moduleMaps.get().isEmpty()) {
-            for (final ModuleMap moduleMap : moduleMaps.get()) {
-                final File moduleMapFile = getProject().getLayout().getBuildDirectory().file("maps/" + moduleMap.getModuleName() + "/module.modulemap").get().getAsFile();
-                workerExecutor.submit(GenerateModuleMapFile.class, new Action<WorkerConfiguration>() {
-                    @Override
-                    public void execute(WorkerConfiguration workerConfiguration) {
-                        workerConfiguration.setIsolationMode(IsolationMode.NONE);
-                        workerConfiguration.params(moduleMapFile, moduleMap.getModuleName(), moduleMap.getPublicHeaderPaths());
-                    }
-                });
-                spec.include(moduleMapFile.getParentFile());
-            }
-
-            workerLeaseService.withoutProjectLock(new Runnable() {
-                @Override
-                public void run() {
-                    workerExecutor.await();
-                }
-            });
         }
 
         spec.setTargetPlatform(targetPlatform);

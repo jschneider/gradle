@@ -32,7 +32,6 @@ import org.gradle.language.swift.SwiftLibrary;
 import org.gradle.language.swift.SwiftSharedLibrary;
 import org.gradle.language.swift.internal.DefaultSwiftLibrary;
 import org.gradle.language.swift.tasks.SwiftCompile;
-import org.gradle.nativeplatform.ModuleMap;
 import org.gradle.util.GUtil;
 
 import javax.inject.Inject;
@@ -96,7 +95,6 @@ public class SwiftLibraryPlugin implements Plugin<Project> {
         debugApiElements.getAttributes().attribute(Usage.USAGE_ATTRIBUTE, objectFactory.named(Usage.class, Usage.SWIFT_API));
         debugApiElements.getAttributes().attribute(DEBUGGABLE_ATTRIBUTE, library.getDebugSharedLibrary().isDebuggable());
         debugApiElements.getAttributes().attribute(OPTIMIZED_ATTRIBUTE, library.getDebugSharedLibrary().isOptimized());
-        debugApiElements.getAttributes().attribute(ModuleMap.REQUIRES_MODULE_MAP, false);
         debugApiElements.getOutgoing().artifact(compileDebug.getModuleFile());
 
         Configuration debugLinkElements = configurations.maybeCreate("debugLinkElements");
@@ -123,7 +121,6 @@ public class SwiftLibraryPlugin implements Plugin<Project> {
         releaseApiElements.getAttributes().attribute(Usage.USAGE_ATTRIBUTE, objectFactory.named(Usage.class, Usage.SWIFT_API));
         releaseApiElements.getAttributes().attribute(DEBUGGABLE_ATTRIBUTE, library.getReleaseSharedLibrary().isDebuggable());
         releaseApiElements.getAttributes().attribute(OPTIMIZED_ATTRIBUTE, library.getReleaseSharedLibrary().isOptimized());
-        debugApiElements.getAttributes().attribute(ModuleMap.REQUIRES_MODULE_MAP, false);
         releaseApiElements.getOutgoing().artifact(compileRelease.getModuleFile());
 
         Configuration releaseLinkElements = configurations.maybeCreate("releaseLinkElements");

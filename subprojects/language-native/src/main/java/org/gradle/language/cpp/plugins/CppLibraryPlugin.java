@@ -41,7 +41,6 @@ import org.gradle.language.cpp.CppLibrary;
 import org.gradle.language.cpp.internal.DefaultCppLibrary;
 import org.gradle.language.cpp.internal.MainLibraryVariant;
 import org.gradle.language.cpp.internal.NativeVariant;
-import org.gradle.nativeplatform.ModuleMap;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -117,14 +116,6 @@ public class CppLibraryPlugin implements Plugin<ProjectInternal> {
             }
         });
         apiElements.getOutgoing().artifact(publicHeaders);
-
-        final Usage swiftApiUsage = objectFactory.named(Usage.class, Usage.SWIFT_API);
-        final Configuration swiftApiElements = configurations.maybeCreate("swiftApiElements");
-        swiftApiElements.extendsFrom(library.getApiDependencies());
-        swiftApiElements.setCanBeResolved(false);
-        swiftApiElements.getAttributes().attribute(Usage.USAGE_ATTRIBUTE, swiftApiUsage);
-        swiftApiElements.getAttributes().attribute(ModuleMap.REQUIRES_MODULE_MAP, true);
-        swiftApiElements.getOutgoing().artifact(publicHeaders);
 
         Configuration implementation = library.getImplementationDependencies();
 
