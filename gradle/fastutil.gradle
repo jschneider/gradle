@@ -1,0 +1,82 @@
+/*
+ * Copyright 2017 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import org.gradle.ShadedJar
+
+
+/**
+ * Fastutil (https://github.com/vigna/fastutil) is a high performance collection library.
+ * It contains memory-efficient replacements for (Linked)HashSet/HashMap as well as primitive
+ * collections like IntSet, which use much less memory than using boxed collections like
+ * <pre>Set<Integer></pre>
+ *
+ * The library is very large, since it contains implementations for every possible combination
+ * of primitive types. We only need a tiny subset of it, so we create our own shaded version and
+ * depend on that instead.
+ */
+configurations {
+    fastUtil
+    fastUtilSources
+}
+
+dependencies {
+    fastUtil "it.unimi.dsi:fastutil:${versions.fastutil}"
+    fastUtilSources "it.unimi.dsi:fastutil:${versions.fastutil}:sources"
+}
+
+task fastUtilShadedJar(type: ShadedJar) {
+    ext.outputDir = file("$buildDir/fastutil/shaded")
+    sourceFiles = configurations.fastUtil
+    analysisFile = file("$outputDir/analysis.txt")
+    classesDir = file("$outputDir/classes")
+    jarFile = file("$outputDir/fastutil-${versions.fastutil}.jar")
+    shadowPackage = "doesNotMatter"
+    unshadedPackages = ["it.unimi.dsi.fastutil"]
+    keepPackages = [
+        "it.unimi.dsi.fastutil.ints.IntOpenHashSet",
+        "it.unimi.dsi.fastutil.ints.IntSets",
+
+    ]
+}
+
+task fastUtilRepo(type: Sync) {
+    dependsOn fastUtilShadedJar
+    into "build/fastutil/repo"
+    from configurations.fastUtilSources
+    from { fastUtilShadedJar.jarFile }
+    eachFile {
+        name = name.replace("fastutil", "fastutil-min")
+    }
+}
+
+allprojects {
+    repositories {
+        ivy {
+            url "$rootDir/build/fastutil/repo"
+            layout "pattern", {
+                artifact "[artifact]-[revision].[ext]"
+            }
+        }
+    }
+    tasks.withType(AbstractCompile) {
+        dependsOn fastUtilRepo
+    }
+    tasks.withType(GenerateIdeaModule) {
+        dependsOn fastUtilRepo
+    }
+    tasks.withType(GenerateEclipseClasspath) {
+        dependsOn fastUtilRepo
+    }
+}

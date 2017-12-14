@@ -25,6 +25,7 @@ versions.groovy = '2.4.12'
 versions.bouncycastle = '1.58'
 versions.maven = '3.0.4'
 versions.httpclient = '4.4.1'
+versions.fastutil = '7.2.1'
 
 libraries.ant = 'org.apache.ant:ant:1.9.9'
 libraries.asm =  'org.ow2.asm:asm-debug-all:6.0_BETA'
@@ -36,6 +37,8 @@ libraries.commons_lang = 'commons-lang:commons-lang:2.6'
 libraries.commons_collections = 'commons-collections:commons-collections:3.2.2'
 libraries.commons_compress = 'org.apache.commons:commons-compress:1.14'
 libraries.jsch = 'com.jcraft:jsch:0.1.54'
+//repackaged, see fastutil.gradle
+libraries.fastutil = ":fastutil-min:${versions.fastutil}"
 
 libraries.ivy = 'org.apache.ivy:ivy:2.2.0'
 
