@@ -465,8 +465,7 @@ class SwiftApplicationIntegrationTest extends AbstractInstalledToolChainIntegrat
         installation("app/build/install/main/debug").exec().out == app.expectedOutput
         sharedLibrary("app/build/install/main/debug/lib/Hello").assertExists()
         sharedLibrary("app/build/install/main/debug/lib/Log").assertExists()
-
-        executer.startLauncherInDebugger(true)
+        
         succeeds ":app:assembleRelease"
 
         result.assertTasksExecuted(":hello:compileReleaseSwift", ":hello:linkRelease", ":hello:stripSymbolsRelease",

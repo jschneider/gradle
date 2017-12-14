@@ -19,7 +19,6 @@ package org.gradle.nativeplatform.test.xctest.internal
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.internal.file.FileOperations
-import org.gradle.api.provider.ProviderFactory
 import org.gradle.language.swift.SwiftComponent
 import org.gradle.nativeplatform.test.xctest.SwiftXCTestSuite
 import org.gradle.util.TestUtil

@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.gradle.nativeplatform;
+package org.gradle.nativeplatform.internal.modulemap;
 
 import org.gradle.api.Incubating;
-import org.gradle.api.tasks.Input;
 
 import java.io.Serializable;
 import java.util.List;
@@ -40,7 +39,6 @@ public class ModuleMap implements Serializable {
     /**
      * The name of the module to use for the generated module map.
      */
-    @Input
     public String getModuleName() {
         return moduleName;
     }
@@ -48,7 +46,6 @@ public class ModuleMap implements Serializable {
     /**
      * The list of public header paths that should be exposed by the module.
      */
-    @Input
     public List<String> getPublicHeaderPaths() {
         return publicHeaderPaths;
     }

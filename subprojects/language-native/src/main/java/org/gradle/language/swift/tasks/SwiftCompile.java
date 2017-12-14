@@ -37,7 +37,6 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.WorkResult;
 import org.gradle.internal.operations.logging.BuildOperationLogger;
 import org.gradle.internal.operations.logging.BuildOperationLoggerFactory;
-import org.gradle.internal.work.WorkerLeaseService;
 import org.gradle.language.base.compile.CompilerVersion;
 import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.language.base.internal.compile.VersionAwareCompiler;
@@ -50,9 +49,7 @@ import org.gradle.nativeplatform.toolchain.NativeToolChain;
 import org.gradle.nativeplatform.toolchain.internal.NativeToolChainInternal;
 import org.gradle.nativeplatform.toolchain.internal.PlatformToolProvider;
 import org.gradle.nativeplatform.toolchain.internal.compilespec.SwiftCompileSpec;
-import org.gradle.workers.WorkerExecutor;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -76,19 +73,14 @@ public class SwiftCompile extends DefaultTask {
     private final DirectoryProperty objectFileDir;
     private final ConfigurableFileCollection source;
     private final Map<String, String> macros = new LinkedHashMap<String, String>();
-    private final WorkerExecutor workerExecutor;
-    private final WorkerLeaseService workerLeaseService;
 
-    @Inject
-    public SwiftCompile(WorkerExecutor workerExecutor, WorkerLeaseService workerLeaseService) {
-        this.source = getProject().files();
-        this.compilerArgs = getProject().getObjects().listProperty(String.class);
-        this.objectFileDir = newOutputDirectory();
-        this.moduleName = getProject().getObjects().property(String.class);
-        this.moduleFile = newOutputFile();
-        this.modules = getProject().files();
-        this.workerExecutor = workerExecutor;
-        this.workerLeaseService = workerLeaseService;
+    public SwiftCompile() {
+        source = getProject().files();
+        compilerArgs = getProject().getObjects().listProperty(String.class);
+        objectFileDir = newOutputDirectory();
+        moduleName = getProject().getObjects().property(String.class);
+        moduleFile = newOutputFile();
+        modules = getProject().files();
     }
 
     /**
@@ -279,10 +271,10 @@ public class SwiftCompile extends DefaultTask {
         spec.setModuleName(moduleName.getOrNull());
         spec.setModuleFile(moduleFile.get().getAsFile());
         for (File file : modules.getFiles()) {
-            if (file.isDirectory()) {
-                spec.include(file);
-            } else {
+            if (file.isFile()) {
                 spec.include(file.getParentFile());
+            } else {
+                spec.include(file);
             }
         }
 

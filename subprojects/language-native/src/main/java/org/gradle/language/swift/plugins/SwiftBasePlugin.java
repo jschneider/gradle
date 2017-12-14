@@ -75,7 +75,7 @@ public class SwiftBasePlugin implements Plugin<ProjectInternal> {
         final ModelRegistry modelRegistry = project.getModelRegistry();
         final ProviderFactory providers = project.getProviders();
 
-        project.getDependencies().getAttributesSchema().attribute(Usage.USAGE_ATTRIBUTE).getCompatibilityRules().add(CppUsageCompatibilityRule.class);
+        project.getDependencies().getAttributesSchema().attribute(Usage.USAGE_ATTRIBUTE).getCompatibilityRules().add(SwiftCppUsageCompatibilityRule.class);
 
         project.getComponents().withType(SwiftBinary.class, new Action<SwiftBinary>() {
             @Override
@@ -229,9 +229,9 @@ public class SwiftBasePlugin implements Plugin<ProjectInternal> {
         return stripSymbols;
     }
 
-    private static class CppUsageCompatibilityRule implements AttributeCompatibilityRule<Usage> {
+    private static class SwiftCppUsageCompatibilityRule implements AttributeCompatibilityRule<Usage> {
         @Inject
-        public CppUsageCompatibilityRule() {
+        public SwiftCppUsageCompatibilityRule() {
         }
 
         @Override

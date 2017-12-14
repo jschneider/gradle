@@ -40,7 +40,7 @@ import org.gradle.api.tasks.TaskDependency;
 import org.gradle.api.tasks.util.PatternSet;
 import org.gradle.language.nativeplatform.internal.Names;
 import org.gradle.language.swift.SwiftBinary;
-import org.gradle.nativeplatform.ModuleMap;
+import org.gradle.nativeplatform.internal.modulemap.ModuleMap;
 import org.gradle.nativeplatform.internal.modulemap.GenerateModuleMapFile;
 
 import java.io.File;
