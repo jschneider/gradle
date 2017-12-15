@@ -38,35 +38,48 @@ public class NestedBeanPropertyAnnotationHandler implements PropertyAnnotationHa
 
     @Override
     public void visitPropertyValue(final PropertyValue propertyValue, PropertyVisitor visitor, PropertySpecFactory specFactory) {
-        DefaultTaskInputPropertySpec propertySpec = specFactory.createInputPropertySpec(propertyValue.getPropertyName() + ".class", new NestedPropertyValue(propertyValue));
-        propertySpec.optional(propertyValue.isOptional());
+        Object nested = propertyValue.getValue();
+        if (nested != null) {
+            if (nested instanceof Iterable<?>) {
+                Iterable nestedBeans = (Iterable) nested;
+                int count = 0;
+                for (Object nestedBean : nestedBeans) {
+                    addNestedClassProperty(nestedBean, visitor, specFactory, propertyValue.getPropertyName() + "$" + ++count, propertyValue.isOptional());
+                }
+            } else {
+                addNestedClassProperty(nested, visitor, specFactory, propertyValue.getPropertyName(), propertyValue.isOptional());
+            }
+        }
+    }
+
+    private void addNestedClassProperty(Object nestedBean, PropertyVisitor visitor, PropertySpecFactory specFactory, String propertyName, boolean optional) {
+        DefaultTaskInputPropertySpec propertySpec = specFactory.createInputPropertySpec(propertyName + ".class", new NestedPropertyValue(nestedBean));
+        propertySpec.optional(optional);
         visitor.visitInputProperty(propertySpec);
     }
 
     private static class NestedPropertyValue implements ValidatingValue {
-        private final PropertyValue propertyValue;
+        private final Object bean;
 
-        public NestedPropertyValue(PropertyValue propertyValue) {
-            this.propertyValue = propertyValue;
+        public NestedPropertyValue(@Nullable Object bean) {
+            this.bean = bean;
         }
 
         @Nullable
         @Override
         public Object call() {
-            Object value = propertyValue.getValue();
-            return value == null ? null : value.getClass().getName();
+            return bean == null ? null : bean.getClass().getName();
         }
 
         @Override
         public void validate(String propertyName, boolean optional, ValidationAction valueValidator, TaskValidationContext context) {
-            Object value = propertyValue.getValue();
-            if (value == null) {
+            if (bean == null) {
                 if (!optional) {
                     String realPropertyName = propertyName.substring(0, propertyName.length() - ".class".length());
                     context.recordValidationMessage(ERROR, String.format("No value has been specified for property '%s'.", realPropertyName));
                 }
             } else {
-                valueValidator.validate(propertyName, value, context, ERROR);
+                valueValidator.validate(propertyName, bean, context, ERROR);
             }
         }
     }

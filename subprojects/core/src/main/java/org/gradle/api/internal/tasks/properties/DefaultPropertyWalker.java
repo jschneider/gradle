@@ -75,9 +75,17 @@ public class DefaultPropertyWalker implements PropertyWalker {
             propertyValueVisitor.visitPropertyValue(propertyValue, visitor, inputs);
             if (propertyValue.isAnnotationPresent(Nested.class)) {
                 try {
-                    Object nestedBean = propertyValue.getValue();
-                    if (nestedBean != null) {
-                        queue.add(new PropertyNode(propertyName, nestedBean));
+                    Object nested = propertyValue.getValue();
+                    if (nested != null) {
+                        if (nested instanceof Iterable<?>) {
+                            Iterable nestedBeans = (Iterable) nested;
+                            int count = 0;
+                            for (Object nestedBean : nestedBeans) {
+                                queue.add(new PropertyNode(propertyName + "$" + ++count, nestedBean));
+                            }
+                        } else {
+                            queue.add(new PropertyNode(propertyName, nested));
+                        }
                     }
                 } catch (Exception e) {
                     // No nested bean
