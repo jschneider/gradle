@@ -141,4 +141,68 @@ class MavenProjectsCreatorSpec extends Specification {
         then:
         gradleProject.contains("compileOnly group: 'org.gradle', name: 'build-init', version:'1.0.0'")
     }
+
+
+    def "creates multi module project with same artifactId"() {
+        given:
+        def parentPom = temp.file("pom.xml")
+        parentPom.text = """<?xml version="1.0" encoding="UTF-8"?>
+        <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+        
+          <modelVersion>4.0.0</modelVersion>
+          <packaging>pom</packaging>
+          <groupId>com.cedarsoft</groupId>
+          <artifactId>test</artifactId>
+          <version>0</version>
+        
+          <modules>
+            <module>commons</module>
+          </modules>
+        </project>               
+"""
+
+        temp.file("commons/pom.xml").text = """<?xml version="1.0" encoding="UTF-8"?>
+        <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+          <parent>
+            <groupId>com.cedarsoft</groupId>
+            <artifactId>test</artifactId>
+            <version>0</version>
+          </parent>
+        
+          <modelVersion>4.0.0</modelVersion>
+          <artifactId>commons</artifactId>
+          <packaging>pom</packaging>
+        
+          <modules>
+            <module>commons</module>
+          </modules>
+        
+        </project>
+        
+"""
+
+        temp.file("commons/commons/pom.xml").text = """<?xml version="1.0"?>
+        <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+          <parent>
+            <artifactId>commons</artifactId>
+            <groupId>com.cedarsoft</groupId>
+            <version>0</version>
+          </parent>
+        
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>com.cedarsoft.commons</groupId>
+          <artifactId>commons</artifactId>
+        
+        </project>            
+"""
+        when:
+        def mavenProjects = creator.create(settings.buildSettings(), parentPom) as List
+
+        then:
+        mavenProjects.size() == 3
+        mavenProjects[0].name == 'test'
+        mavenProjects[1].name == 'commons'
+        mavenProjects[2].name == 'commons'
+    }
+
 }
